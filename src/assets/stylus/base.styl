@@ -1,0 +1,30 @@
+@import url(http://fonts.font.im/css?family=Roboto:400,700italic,700,400italic)
+
+body, html
+  font-family: Roboto, 'Microsoft YaHei UI', Helvetica, Arial, sans-serif
+  font-weight: 400
+
+
+@media (-webkit-min-device-pixel-ratio: 1.5), (min-device-pixel-ratio: 1.5)
+  .border-1px
+    &:after
+      -webkit-transform: scaleY(0.45)
+      transform: scaleY(0.45)
+
+@media (-webkit-min-device-pixel-ratio: 2), (min-device-pixel-ratio: 2)
+  .border-1px
+    &:after
+      -webkit-transform: scaleY(0.33)
+      transform: scaleY(0.33)
+
+@media (-webkit-min-device-pixel-ratio: 3), (min-device-pixel-ratio: 3)
+  .border-1px
+    &:after
+      -webkit-transform: scaleY(0.22)
+      transform: scaleY(0.22)
+
+@media (-webkit-min-device-pixel-ratio: 4), (min-device-pixel-ratio: 4)
+  .border-1px
+    &:after
+      -webkit-transform: scaleY(0.17)
+      transform: scaleY(0.17)
