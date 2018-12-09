@@ -5,6 +5,7 @@ import User from '@/views/User'
 import UserPlaylist from '@/views/UserPlaylist'
 import UserStatusUpdates from '@/views/UserStatusUpdates'
 import UserAboutMe from '@/views/UserAboutMe'
+import Playlist from '@/views/Playlist'
 
 Vue.use(VueRouter)
 
@@ -34,6 +35,10 @@ const routes = [
         component: UserAboutMe
       }
     ]
+  },
+  {
+    path: '/playlist',
+    component: Playlist
   }
 ]
 

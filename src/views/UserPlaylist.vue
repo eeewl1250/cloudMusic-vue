@@ -1,12 +1,16 @@
 <template>
-  <div class="playlist" v-if="playlistReady">
+  <div class="user-playlist" v-if="playlistReady">
       <div class="lists" v-for="(listType, key) in playlist" :key="key">
         <div class="title">
           <span class="text">{{ getNameByType(listType.type) }}</span>
           <span class="count">({{ listType.data.length }})</span>
         </div>
         <ul class="content">
-          <li class="list-item" v-for="(list, lIdx) in listType.data" :key="lIdx">
+          <li class="list-item"
+              v-for="(list, lIdx) in listType.data"
+              :key="lIdx"
+              @click="$router.push({ path: '/playlist', query: { id: list.id } })"
+          >
             <div class="cover">
               <img :src="list.cover" width="54" height="54">
             </div>
@@ -26,7 +30,7 @@
 
 <script>
 export default {
-  name: 'Playlist',
+  name: 'UserPlaylist',
   computed: {
     playlistReady () {
       return this.$store.getters.initPlaylist
@@ -50,7 +54,7 @@ export default {
 <style lang="stylus" rel="stylesheet/stylus">
 @import '../assets/stylus/mixin.styl'
 
-.playlist
+.user-playlist
   font-size: 14px
   color: black
   .lists

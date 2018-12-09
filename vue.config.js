@@ -8,6 +8,7 @@ let data = {
   song: appData.songs,
   playlist: appData.playlists,
   album: appData.albums,
+  artist: appData.artists,
   comment: appData.comments
 }
 const apiRouters = express.Router()
@@ -25,25 +26,25 @@ module.exports = {
   },
   devServer: {
     before (app) {
-      // 根据数据项ID，获取该项数据
-      app.get('/api/data/:type/:id', (req, res) => {
-        let dataType = req.params.type
-        let itemId = req.params.id
-        if (['user', 'song', 'playlist', 'album', 'comment'].includes(dataType)) {
-          res.json({
-            err_no: 0,
-            data: data[dataType].find((item) => {
-              return item.id === itemId
-            })
+      // 获取图片
+      app.get('/api/images/:pic', (req, res) => {
+        res.sendFile(path.resolve(__dirname) + '/mockData/' + req.params.pic)
+      })
+      // 根据用户名，获取用户信息
+      app.get('/api/user/:username', (req, res) => {
+        res.json({
+          err_no: 0,
+          data: data.user.find((user) => {
+            return user.username === req.params.username
           })
-        }
+        })
       })
       // 根据用户ID，获取其播放列表
-      app.get('/api/playlist/:userid', (req, res) => {
+      app.get('/api/user/playlist/:userid', (req, res) => {
         let userId = req.params.userid
         let creation = []
         data.playlist.forEach(list => {
-          if (list.userId === userId) {
+          if (list.user.id === userId) {
             creation.push({
               id: list.id,
               cover: list.cover,
@@ -61,7 +62,7 @@ module.exports = {
               collection.push({
                 id: listDetail.id,
                 cover: listDetail.cover,
-                username: data.user.find(user => user.id === listDetail.userId).username,
+                username: data.user.find(user => user.id === listDetail.user.id).username,
                 name: listDetail.name,
                 countSong: listDetail.songs.length,
                 countPlay: listDetail.countPlay
@@ -81,18 +82,62 @@ module.exports = {
           }
         })
       })
-      // 根据用户名，获取用户信息
-      app.get('/api/user/:username', (req, res) => {
+      // 根据歌单ID，获取歌单与创建用户信息
+      app.get('/api/playlist/:listid', (req, res) => {
+        let listId = req.params.listid
+        let listInfo = data.playlist.find(item => item.id === listId)
+
+        let userInfo = data.user.find(item => item.id === listInfo.user.id)
+        listInfo.user = {
+          id: userInfo.id,
+          username: userInfo.username,
+          avatar: userInfo.avatar
+        }
+
+        let songInfo = []
+        for (let songId of listInfo.songs) {
+          let songFullInfo = data.song.find(item => item.id === songId.id)
+
+          let artistInfo = []
+          for (let artistId of songFullInfo.artist) {
+            let artFullInfo = data.artist.find(item => item.id === artistId.id)
+            artistInfo.push({
+              id: artFullInfo.id,
+              name: artFullInfo.name
+            })
+          }
+
+          let albumInfo = {
+            id: songFullInfo.album.id,
+            name: data.album.find(item => item.id === songFullInfo.album.id).name
+          }
+
+          songInfo.push({
+            id: songFullInfo.id,
+            name: songFullInfo.name,
+            artist: artistInfo,
+            album: albumInfo
+          })
+        }
+        listInfo.songs = songInfo
+
         res.json({
           err_no: 0,
-          data: data.user.find((user) => {
-            return user.username === req.params.username
-          })
+          data: listInfo
         })
       })
-      // 获取图片
-      app.get('/api/images/:pic', (req, res) => {
-        res.sendFile(path.resolve(__dirname) + '/mockData/' + req.params.pic)
+      // 根据数据项ID，获取该项数据
+      app.get('/api/data/:type/:id', (req, res) => {
+        let dataType = req.params.type
+        let itemId = req.params.id
+        if (['user', 'song', 'playlist', 'album', 'comment'].includes(dataType)) {
+          res.json({
+            err_no: 0,
+            data: data[dataType].find((item) => {
+              return item.id === itemId
+            })
+          })
+        }
       })
     },
     port: '8090'

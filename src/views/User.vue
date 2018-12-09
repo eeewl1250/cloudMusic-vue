@@ -48,7 +48,7 @@
 
 <script>
 const ERR_NO = 0
-// const USER_ID = '5c065278fc13ae254d000028'
+const USER_ID = '5c065278fc13ae254d000028'
 const USERNAME = 'dasSpielIstGut'
 
 export default {
@@ -62,16 +62,19 @@ export default {
   created () {
     this.user = this.$store.state.user
     this.playlist = this.$store.state.playlist
-    this.$http.get('/api/user/' + USERNAME)
-        .then(res => {
-          res = res.data
-          if (res.err_no === ERR_NO) {
-            setTimeout(() => {
+
+    let queryUserId = this.$route.query.id
+    if (!queryUserId || queryUserId === USER_ID) {
+      this.$http.get('/api/user/' + USERNAME)
+          .then(res => {
+            res = res.data
+            if (res.err_no === ERR_NO) {
+              //setTimeout(() => {
               this.user = res.data
               this.$store.dispatch('setUser', res.data)
 
               if (!this.$store.getters.initPlaylist) {
-                this.$http.get('/api/playlist/' + this.user.id)
+                this.$http.get('/api/user/playlist/' + this.user.id)
                     .then(res => {
                       res = res.data
                       this.playlist = res.data
@@ -80,11 +83,23 @@ export default {
               } else {
                 this.playlist = this.$store.state.playlist
               }
-            }, 3000)
-            //
-            // this.$store.dispatch('setUserReady', true)
-          }
-        })
+              //}, 500)
+              //
+              // this.$store.dispatch('setUserReady', true)
+            }
+          })
+    } else {
+      this.$http.get('/api/data/user/' + queryUserId)
+          .then(res => {
+            res = res.data
+            this.user = res.data
+            this.$http.get('/api/user/playlist/' + this.user.id)
+                .then(res => {
+                  res = res.data
+                  this.playlist = res.data
+                })
+          })
+    }
   }
 }
 </script>
