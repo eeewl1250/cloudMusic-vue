@@ -6,6 +6,7 @@ import UserPlaylist from '@/views/UserPlaylist'
 import UserStatusUpdates from '@/views/UserStatusUpdates'
 import UserAboutMe from '@/views/UserAboutMe'
 import Playlist from '@/views/Playlist'
+import Song from '@/views/Song'
 
 Vue.use(VueRouter)
 
@@ -17,6 +18,9 @@ const routes = [
   {
     path: '/user',
     component: User,
+    meta: {
+      keepAlive: true
+    },
     children: [
       {
         path: '',
@@ -24,7 +28,10 @@ const routes = [
       },
       {
         path: 'playlist',
-        component: UserPlaylist
+        component: UserPlaylist,
+        meta: {
+          keepAlive: true
+        }
       },
       {
         path: 'status',
@@ -38,7 +45,15 @@ const routes = [
   },
   {
     path: '/playlist',
-    component: Playlist
+    component: Playlist,
+    meta: {
+      keepAlive: true
+    }
+  },
+  {
+    path: '/song',
+    component: Song,
+    name: 'song'
   }
 ]
 

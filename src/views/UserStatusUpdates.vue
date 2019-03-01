@@ -1,25 +1,21 @@
 <template>
   <div class="status">
-    <ul v-if="userReady">
-      <!--<li v-for=""></li>-->
-    </ul>
+    <p>暂无动态</p>
   </div>
 </template>
 
 <script>
 export default {
-  name: 'StatusUpdates',
-  computed: {
-    userReady () {
-      return this.$store.state.userReady
-    },
-    user () {
-      return this.$store.state.user
-    }
-  }
+  name: 'StatusUpdates'
 }
 </script>
 
-<style scoped>
-
+<style lang="stylus" rel="stylesheet/stylus">
+.status
+  padding: 20px
+  p
+    padding: 20px
+    font-size: 12px
+    color: #999
+    text-align: center
 </style>

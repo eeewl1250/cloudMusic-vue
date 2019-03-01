@@ -1,6 +1,13 @@
 <template>
   <div class="playlist">
-    <div class="top">顶部</div>
+    <div class="buttons">
+        <span class="icon back">
+          <back></back>
+        </span>
+      <span class="icon share">
+          <share></share>
+        </span>
+    </div>
     <div class="background-wrapper">
       <div class="background"></div>
     </div>
@@ -17,7 +24,7 @@
         <div class="list-name">{{ playlist.name }}</div>
         <div class="user-info" @click="$router.push({ path: '/user', query: { id: playlist.user.id }})">
           <span class="avatar">
-            <img :src="playlist.user.avatar" width="26" height="26">
+            <img :src="'/api/images/img/' + playlist.user.id + '.jpg'" width="26" height="26">
           </span>
           <span class="username">{{ playlist.user.username }}</span>
           <span class="icon icon-right-arrow-more"></span>
@@ -47,7 +54,7 @@
                     :key="lIdx"
               >{{ label }}</span>
             </div>
-            <div class="description" v-html="newlineConvert(playlist.description)"></div>
+            <div class="description" v-html="$util.newlineConvert(playlist.description)"></div>
           </div></div>
         <div class="actions" @click.stop>
           <button class="button edit">编辑歌单</button>
@@ -75,7 +82,7 @@
     </div>
     <div class="songs">
       <div class="title border-1px">
-        <span class="icon icon-play"></span>
+        <span class="icon icon-play" @click="playList"></span>
         <span class="text">播放全部</span>
         <span class="number">(共{{ playlist.songs.length }}首)</span>
         <span class="count-collect">
@@ -91,7 +98,11 @@
         </span>
       </div>
       <ul class="song-list">
-        <li class="song-item" v-for="(song, index) in playlist.songs" :key="index">
+        <li class="song-item"
+            v-for="(song, index) in playlist.songs"
+            :key="index"
+            @click="playTrack(song.id)"
+        >
           <div class="index">{{ index + 1 }}</div>
           <div class="detail border-1px">
             <div class="song-info">
@@ -107,7 +118,7 @@
                 <span class="album">{{ song.album.name }}</span>
               </div>
             </div>
-            <div class="video icon-video"></div>
+            <div class="video icon-video" v-if="false"></div>
             <div class="more icon-more"></div>
           </div>
         </li>
@@ -117,11 +128,22 @@
 </template>
 
 <script>
+import { mapActions } from 'vuex'
+import apiPlaylist from '../api/playlist'
+
+import Back from '@/components/Back'
+import Share from '@/components/Share'
+
+const ERR_OK = 0
+
 export default {
   name: 'Playlist',
+  components: {
+    back: Back,
+    share: Share
+  },
   data () {
     return {
-      listId: this.$route.query.id,
       playlist: {
         id: '',
         name: '歌单',
@@ -145,43 +167,75 @@ export default {
       isCollected: false
     }
   },
-  mounted () {
-    if (!this.listId) return
-    this.$http.get('/api/playlist/' + this.listId)
+  created () {
+    apiPlaylist.getPlaylist(this.$route.query.id)
         .then(res => {
           res = res.data
-          this.playlist = res.data
-          this.selfCreated = this.$store.state.user.id === this.playlist.user.id
-          this.isCollected = !this.selfCreated && this.listIsCollected()
+          this.$nextTick(() => {
+            this.playlist = res.data
+            this.selfCreated = this.listSelfCreated()
+            this.isCollected = !this.selfCreated && this.listIsCollected()
+          })
         })
   },
   methods: {
+    // store
+    ...mapActions([
+      'setPlayingList',
+      'setPlayingTrack',
+      'resetPlayMode',
+      'setIsPaused'
+    ]),
+    // 显示具体信息
     showListFullInfo () {
       this.ifShowListFullInfo = true
-      this.stopBodyMove()
+      this.$util.stopBodyMove(this)
     },
+    // 隐藏具体信息
     hideListFullInfo () {
       this.ifShowListFullInfo = false
-      this.bodyMove()
+      this.$util.bodyMove(this)
     },
-    stopBodyMove () {
-      document.body.style.overflow = 'hidden'
-      this.$on(e => { e.preventDefault() })
+    // 是否用户创建列表
+    listSelfCreated () {
+      return this.$store.state.user.id === this.playlist.user.id
     },
-    bodyMove () {
-      document.body.style.overflow = ''
-      this.$off(e => { e.preventDefault() })
-    },
-    newlineConvert (text) {
-      return text.replace(/\n/g, '<br>')
-    },
+    // 是否用户收藏列表
     listIsCollected () {
-      for (let item of this.$store.state.playlist.collection.data) {
-        if (item.id === this.playlist.id) {
-          return true
-        }
-      }
-      return false
+      return !!this.$store.state.playlist.collection.data.find(item => item.id === this.playlist.id)
+    },
+    // 设置当前播放歌曲
+    playTrack (songId) {
+      this.setPlayingInfo(() => {
+        this.setPlayingTrack(songId)
+            .then(() => {
+              this.setIsPaused(false)
+              // 跳转歌曲页面
+              this.$router.push({ path: '/song', query: { id: songId } })
+            })
+      })
+    },
+    // 设置播放歌曲为播放列表第一首，模式为列表循环
+    playList () {
+      this.setPlayingInfo(() => {
+        this.setPlayingTrack(this.playlist.songs[0].id)
+        this.resetPlayMode(true)
+      })
+    },
+    // 点击播放后，设置所需信息：当前播放歌曲，播放列表
+    setPlayingInfo (callback) {
+      // 播放列表内，所有歌曲ID
+      const playingList = this.playlist.songs.map(v => v.id)
+
+      // 根据歌曲ID，获取 歌曲名、歌曲封面 和 歌手名
+      apiPlaylist.getSongSimpleInfo(playingList)
+          .then(res => {
+            res = res.data
+            if (res.err_no === ERR_OK) {
+              this.setPlayingList(res.data)
+              callback()
+            }
+          })
     }
   }
 }
@@ -193,9 +247,20 @@ export default {
 .playlist
   padding-top: 52px
   font-size: 0
-  .top
+  .buttons
     position: absolute
-    height: 52px
+    top: 0
+    left: 0
+    display: flex
+    justify-content: space-between
+    width: calc(100% - 32px)
+    padding: 16px 14px 14px 18px
+    .icon
+      width: 20px
+      height: 20px
+      font-size: 20px
+      :before
+        color: #ffffff
   .background-wrapper
     position: absolute
     left: 0
@@ -272,8 +337,6 @@ export default {
     top: 0
     right: 0
     bottom: 0
-    /*width: 100%*/
-    /*height: 100%*/
     z-index: 11
     .info-background-wrapper
       position: absolute
@@ -366,7 +429,7 @@ export default {
   .songs
     .title
       position: relative
-      padding: 0 15px
+      padding: 0 15px 0 3px
       height: 45px
       line-height: 45px
       background-color: #ffffff
@@ -375,11 +438,12 @@ export default {
       border-1px(rgba(0, 0, 0, 0.1))
       overflow: hidden
       .icon
+        padding: 12px
         font-size: 20px
         color: #4d4d4d
         vertical-align: middle
       .text
-        margin-left: 16px
+        margin-left: 4px
         font-size: 16px
         color: #333333
         vertical-align: middle

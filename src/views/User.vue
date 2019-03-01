@@ -2,9 +2,9 @@
   <div class="user">
     <div class="simple-info">
       <div class="buttons">
-        <!--这个可以拆分成一个组件-->
-        <span class="icon icon-arrow_left"></span>
-        <span class="icon icon-share"></span>
+        <span class="icon share">
+          <share></share>
+        </span>
       </div>
       <div class="user-info">
         <div class="avatar">
@@ -27,16 +27,13 @@
       <div class="nav-tab border-1px">
         <router-link to="/user/playlist" class="tab-item">
           <span class="text">音乐</span>
-          <span class="count" v-if="playlist.creation">{{ playlist.creation.data.length + playlist.collection.data.length }}</span>
+          <span class="count" v-if="$store.getters.initPlaylist">{{ playlist.creation.data.length + playlist.collection.data.length }}</span>
         </router-link>
         <router-link to="/user/status" class="tab-item">
           <span class="text">动态</span>
-          <!--<span class="count" v-if="userReady">{{ user.shares.length}}</span>-->
         </router-link>
         <router-link to="/user/about" class="tab-item">
           <span class="text">关于我</span>
-          <!--<span class="count" v-if="userReady">{{ user.comments.length}}</span>-->
-          <span class="count">36</span>
         </router-link>
       </div>
     </div>
@@ -47,59 +44,52 @@
 </template>
 
 <script>
-const ERR_NO = 0
-const USER_ID = '5c065278fc13ae254d000028'
-const USERNAME = 'dasSpielIstGut'
+import apiUser from '@/api/user'
+
+import Share from '@/components/Share'
+
+const ERR_OK = 0
 
 export default {
   name: 'User',
   data () {
     return {
       user: {},
-      playlist: []
+      playlist: {},
+      my: false
     }
+  },
+  components: {
+    share: Share
   },
   created () {
     this.user = this.$store.state.user
     this.playlist = this.$store.state.playlist
 
     let queryUserId = this.$route.query.id
-    if (!queryUserId || queryUserId === USER_ID) {
-      this.$http.get('/api/user/' + USERNAME)
-          .then(res => {
-            res = res.data
-            if (res.err_no === ERR_NO) {
-              //setTimeout(() => {
-              this.user = res.data
-              this.$store.dispatch('setUser', res.data)
 
-              if (!this.$store.getters.initPlaylist) {
-                this.$http.get('/api/user/playlist/' + this.user.id)
-                    .then(res => {
-                      res = res.data
-                      this.playlist = res.data
-                      this.$store.dispatch('setPlaylist', res.data)
-                    })
-              } else {
-                this.playlist = this.$store.state.playlist
-              }
-              //}, 500)
-              //
-              // this.$store.dispatch('setUserReady', true)
-            }
-          })
-    } else {
-      this.$http.get('/api/data/user/' + queryUserId)
-          .then(res => {
-            res = res.data
+    // user界面的信息，在退出后都需要再次请求获取
+    // 除非只是点返回键返回到user页面
+    apiUser.getUser(queryUserId || this.user.id)
+        .then(res => {
+          res = res.data
+          if (res.err_no === ERR_OK) {
             this.user = res.data
-            this.$http.get('/api/user/playlist/' + this.user.id)
+            this.$store.dispatch('setUser', res.data)
+            // 获取用户所有playlist信息
+            apiUser.getPlaylist(this.user.id)
                 .then(res => {
                   res = res.data
                   this.playlist = res.data
+                  this.$store.dispatch('setPlaylist', res.data)
                 })
-          })
-    }
+          }
+        })
+  },
+  mounted () {
+    // 判断当前user界面是否是用户本人
+    const queryUserId = this.$route.query.id
+    this.my = !queryUserId || queryUserId === this.user.id
   }
 }
 </script>
@@ -112,16 +102,18 @@ export default {
   .simple-info
     background-color: #000
     .buttons
+      display: flex
+      justify-content: space-between
       padding: 16px 14px 14px 18px
       .icon
         width: 20px
         height: 20px
         font-size: 20px
-        &:before
-          color: black
+        :before
+          color: #ffffff
     .user-info
       padding: 58px 13px 18px 19px
-      color: black /*暂时填充*/
+      color: black
       .avatar
         width: 80px
         height: 80px

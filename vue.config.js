@@ -27,9 +27,23 @@ module.exports = {
   devServer: {
     before (app) {
       // 获取图片
-      app.get('/api/images/:pic', (req, res) => {
-        res.sendFile(path.resolve(__dirname) + '/mockData/' + req.params.pic)
+      app.get('/api/images/*', (req, res) => {
+        res.sendFile(path.resolve(__dirname) + '/mockData/' + req.params[0])
       })
+      // 获取歌曲
+      app.get('/api/music/:track', (req, res) => {
+        res.sendFile(path.resolve(__dirname) + '/mockData/audio/' + req.params.track)
+      })
+      // 根据用户ID，获取用户信息
+      app.get('/api/user/:id', (req, res) => {
+        let user =data.user.find(item => { return item.id === req.params.id })
+        user.avatar = '/api/images/img/' + user.id + '.jpg'
+        res.json({
+          err_no: 0,
+          data: user
+        })
+      })
+      /*
       // 根据用户名，获取用户信息
       app.get('/api/user/:username', (req, res) => {
         res.json({
@@ -39,6 +53,7 @@ module.exports = {
           })
         })
       })
+      */
       // 根据用户ID，获取其播放列表
       app.get('/api/user/playlist/:userid', (req, res) => {
         let userId = req.params.userid
@@ -80,6 +95,15 @@ module.exports = {
               data: collection
             }
           }
+        })
+      })
+      // 根据用户ID，获取其评论列表
+      app.get('/api/user/comment/:userid', (req, res) => {
+        let userId = req.params.userid
+        let commentInfo = data.comment.filter(item => item.user.id === userId)
+        res.json({
+          err_no: 0,
+          data: commentInfo
         })
       })
       // 根据歌单ID，获取歌单与创建用户信息
@@ -124,6 +148,61 @@ module.exports = {
         res.json({
           err_no: 0,
           data: listInfo
+        })
+      })
+      // 根据歌曲ID，获取歌曲简单信息（歌曲名、歌曲封面和歌手）
+      app.get('/api/song/simple/:idList', (req, res) => {
+        const songIdList = JSON.parse(req.params.idList)
+
+        let songsInfo = []
+        for (let songId of songIdList) {
+          const songInfo = data.song.find(item => item.id === songId)
+
+          let artistNames = []
+          for (let artistId of songInfo.artist) {
+            const artistFullInfo = data.artist.find(item => item.id === artistId.id)
+            artistNames.push(artistFullInfo.name)
+          }
+
+          songsInfo.push({
+            id: songId,
+            name: songInfo.name,
+            artist: artistNames,
+            cover: '/api/images/img/' + songInfo.album.id + '.jpg'
+          })
+        }
+
+        res.json({
+          err_no: 0,
+          data: songsInfo
+        })
+      })
+      // 根据歌曲ID，获取歌曲完整信息
+      // 歌曲的cover来自专辑
+      app.get('/api/song/:songid', (req, res) => {
+        let songId = req.params.songid
+        let songInfo = data.song.find(item => item.id === songId)
+
+        let artistInfo = []
+        for (let artistId of songInfo.artist) {
+          let artistFullInfo = data.artist.find(item => item.id === artistId.id)
+          artistInfo.push({
+            id: artistFullInfo.id,
+            name: artistFullInfo.name
+          })
+        }
+        songInfo.artist = artistInfo
+
+        let albumInfo = data.album.find(item => item.id === songInfo.album.id)
+        songInfo.album = {
+          id: albumInfo.id,
+          name: albumInfo.name,
+        }
+        songInfo.cover = '/api/images/img/' + albumInfo.id + '.jpg'
+
+        res.json({
+          err_no: 0,
+          data: songInfo
         })
       })
       // 根据数据项ID，获取该项数据

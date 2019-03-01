@@ -3,7 +3,7 @@
       <div class="lists" v-for="(listType, key) in playlist" :key="key">
         <div class="title">
           <span class="text">{{ getNameByType(listType.type) }}</span>
-          <span class="count">({{ listType.data.length }})</span>
+          <span class="count" v-if="listType.data">({{ listType.data.length }})</span>
         </div>
         <ul class="content">
           <li class="list-item"
