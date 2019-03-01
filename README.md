@@ -4,7 +4,7 @@
     </a>
 </p>
 
-<p align="center">基于 Vue2 + Vue-Cli3 + Vuex + Vue-router, 仿网易云音乐的播放列表和歌曲界面</p>
+<p align="center">基于 Vue2 + Vue-Cli3 + Vuex + Vue-router, <br />仿网易云音乐的播放列表和歌曲界面(安卓手机版)</p>
 
 
 ## 项目运行
